@@ -1,26 +1,45 @@
 
+
+
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.properties import NumericProperty, ReferenceListProperty, ObjectProperty
 from kivy.vector import Vector
-from kivy.effects.kinetic import KineticEffect
 from kivy.clock import Clock
+from kivy.properties import NumericProperty, ReferenceListProperty, ObjectProperty
 
 from random import randint
 
-class test02(App):
+
+
+FPS = 60  # <-- Constant:  Frames Per Second
+LAUNCH_START_POS = (25, 25)  # <-- Constant:  Starting position for 'launch_ball()' (lower-left corner).
+
+
+
+# App class to build the app container.
+class trajectory(App):
     def build(self):
-        test = collisionTest()
-        test.serve_ball()
-        Clock.schedule_interval(test.update, 1 / 60)
+        # Create the 'display' variable to assign updates and return.
+        display = screen()
+        # Set 'display' framerate with constant FPS.
+        Clock.schedule_interval(display.update, 1 / FPS)
 
-        return test
+        # At app initiation call launch_ball().
+        display.launch_ball()
 
-class collisionTest(Widget):
+        return display
+
+
+
+# Screen class after app class.  Contains the whole of the action of the app.
+class screen(Widget):
     ball = ObjectProperty(None)
 
-    def serve_ball(self):
-        self.ball.center = (50, 50)
+    # Function sets up primary initiating action of script, to "throw" the ball.
+    def launch_ball(self):
+        # Starting position of 'ball'.
+        self.ball.center = LAUNCH_START_POS
+        # Velocity and angle of 'launch_ball()'.
         self.ball.velocity = Vector(randint(5, 10), 0).rotate(randint(20, 85))
 
     def update(self, dt):
@@ -44,6 +63,8 @@ class collisionTest(Widget):
             # Reverse velocity at wall collision.
             self.ball.velocity_x *= -1
 
+
+
 class ball(Widget):
     velocity_x = NumericProperty(0)
     velocity_y = NumericProperty(0)
@@ -60,7 +81,8 @@ class ball(Widget):
         #  Apply gravity.
         self.velocity_y -= .2
 
-        print(self.velocity)
 
+
+# Call app.
 if __name__ == '__main__':
-    test02().run()
+    trajectory().run()
