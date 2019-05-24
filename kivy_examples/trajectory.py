@@ -1,9 +1,6 @@
 
 
 
-
-
-
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
@@ -19,12 +16,12 @@ from random import randint
 FPS = 60
 # LAUNCH constants.
 L_START_POS = (30, 30)
-L_VEL_MIN, L_VEL_MAX = 5, 20
+L_VEL_MIN, L_VEL_MAX = 10, 30
 L_ROT_MIN, L_ROT_MAX = 30, 80
 # PHYSICS constants.
-DRAG = .005
-GRAVITY = .2
-ELASTICITY = .9
+DRAG = 0.01
+GRAVITY = 0.2
+ELASTICITY = 0.9
 
 
 
@@ -67,52 +64,32 @@ class ball(Widget):
     vel_x = NumericProperty(0)
     vel_y = NumericProperty(0)
     velocity = ReferenceListProperty(vel_x, vel_y)
-    # collided = NumericProperty(0)                                                                                     #####
 
     def move(self):
 
-        if self.y < 0:
-            self.vel_y *= - ELASTICITY
-        elif self.top > self.parent.height:
-            self.vel_y *= - ELASTICITY
-        else:
-            self.vel_y -= self.vel_y * DRAG
+        # ... COLLISION DETECTIONS ... Have to use absolute values ('abs()') of velocities to avoid "sticky" collisions.
 
-        if self.x < 0:
-            self.vel_x *= - ELASTICITY
-        elif self.right > self.parent.width:
-            self.vel_x *= - ELASTICITY
-        else:
-            self.vel_x -= self.vel_x * DRAG
+        # Check for collision with floor.
+        if self.y < 0:                          self.vel_y = abs(self.vel_y) * ELASTICITY
+        # Check for collision with ceiling.
+        elif self.top > self.parent.height:     self.vel_y = - abs(self.vel_y) * ELASTICITY
+        # If no collisions then update position without affecting velocity direction and apply gravity.
+        else:                                   self.vel_y = self.vel_y - (self.vel_y * DRAG) - GRAVITY
 
-        # if self.collided >= 1:  self.collided -= 1                                                                    #####
+        # Check for collision with left wall.
+        if self.x < 0:                          self.vel_x = abs(self.vel_x) * ELASTICITY
+        # Check for collision with right wall.
+        elif self.right > self.parent.width:    self.vel_x = - abs(self.vel_x) * ELASTICITY
+        # If no collision then update position without affecting velocity direction.
+        else:                                   self.vel_x -= self.vel_x * DRAG
 
-        # Collision detection ... Check self coordinates for intersection with designated boundaries (parent.size).  If
-        # intersection is detected, reverse axis velocity and apply ELASTICITY.
-        # if self.collided <= 0:                                                                                        #####
-        # if self.y <= 0:
-        #     self.vel_x *= ELASTICITY
-        #     self.vel_y *= - ELASTICITY
-        # elif self.top >= self.parent.height:
-        #     self.vel_x *= ELASTICITY
-        #     self.vel_y *= - ELASTICITY
-        # if self.x <= 0:
-        #     self.vel_x *= - ELASTICITY
-        #     self.vel_y *= ELASTICITY
-        # elif self.right >= self.parent.width:
-        #     self.vel_x *= - ELASTICITY
-        #     self.vel_y *= ELASTICITY
-            # self.collided = 2                                                                                         #####
-
-        #  Apply physics of drag and gravity, then update position with updated Vector.
-        # self.vel_x -= self.vel_x * DRAG
-        # self.vel_y -= self.vel_y * DRAG
-        self.vel_y -= GRAVITY
+        # Update position by applying new velocity with Vector.
         self.pos = Vector(* self.velocity) + self.pos
+
+        # print(self.center, " ... ", self.velocity)                                                                    #####
 
 
 
 # Call app.
 if __name__ == '__main__':
     trajectory().run()
-
