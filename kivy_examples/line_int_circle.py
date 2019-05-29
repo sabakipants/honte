@@ -1,53 +1,80 @@
 
 
-from math import sqrt, hypot
 
-cx, cy = 0, 0.1
-r = 1.1
+"""
+circle_int_line.py
 
-x1, y1 = 1, 0
-x2, y2 = 1.0001, 10
+Return True if any point within designated circle is on designated line segment.  Accept 7
+arguments:  coordinates of circle, radius of circle, and coordinates of both endpoints of line
+segment.
 
-a = y1 - y2
-b = x2 - x1
-c = x1 * y2 - x2 * y1
+First determine if either endpoint is inside circle, if so return True.  Then designate closest
+point of circle on extended line.  Check if closest point is on line, if not return False.  If so,
+do final check and see if distance of from circle's coordinates to closest point on line is less
+than circle's radius.  If so, return True.
+
+- last updated 2019-05-29 by David Lang
+"""
 
 
 
-# Check for collision with points first.
-dist_p1 = hypot(cx - x1, cy - y1)
-dist_p2 = hypot(cx - x2, cy - y2)
-col_endpoints = (dist_p1 <= r) or (dist_p1 <= r)
+from math import hypot
 
-distX = x1 - x2
-distY = y1 - y2
-len = sqrt( ( distX * distX ) + ( distY * distY ) )
+# Circle variables.
+circ_x, circ_y = 0, 0
+radius = 1
 
-dot = ( ( ( cx - x1 ) * ( x2 - x1 ) ) + ( ( cy - y1 ) * ( y2 - y1 ) ) ) / ( len ** 2 )
+# Line segment variables.
+p1_x, p1_y = 1, 10
+p2_x, p2_y = 1, -10
 
-# 'closest_x' and 'closest_y' determine the closest point on the given line (not line segment, as if
-# the given line continued on forever beyond the given points).
-closest_x = x1 + ( dot * ( x2 - x1 ) )
-closest_y = y1 + ( dot * ( y2 - y1 ) )
 
-line_len = hypot(x2 - x1, y2 - y1)
-dist_close_p1 = hypot(closest_x - x1, closest_y - y1)
-dist_close_p2 = hypot(closest_x - x2, closest_y - y2)
 
-# 'closest_on_line' is a boolean that returns whether the point ('closest_x', 'closest_y') is on the
-# line of the given points.
-closest_on_line = line_len == dist_close_p1 + dist_close_p2
+"""
+Note...  The function 'cornerCol()' is used because of it's need for future development.  Vector
+reflection from object bounce will be different if the object is colliding with a corner.
+"""
 
-###   IF 'closest_on_line' RETURNS FALSE, PROCEDURE CAN STOP.  NO FURTHER COMPUTATIONS NEEDED TO
-###   DETERMINE IF CIRCLE COLLIDES WITH LINE SEGMENT.
+def cornerCol(cx, cy, cr, px, py):
+    """
+    Return True if distance between ('cx', 'cy') and ('px', 'py') is less than 'cr'.
+    """
+    return hypot(cx - px, cy - py) <= cr
 
-dist_x = closest_x - cx
-dist_y = closest_y - cy
-distance = sqrt( ( dist_x * dist_x ) + ( dist_y * dist_y ) )
 
-collision = closest_on_line and (distance <= r)
 
-print("collision at endpoints        =", col_endpoints)
-print("dot is on line segment        =", closest_on_line)
-print("collision w/ line rel/ to dot =", collision)
+def circleLineSegCol(cx, cy, cr, p1x, p1y, p2x, p2y):
+    """
+    Return True if circle (represented with arguments 'cx', 'cy', and 'cr') collides with line
+    segment (represented with arguments 'p1x', 'p1y', 'p2x', and 'p2y').
+    """
+    # First, use 'cornerCol()' to determine if endpoints of line segment collide with circle.  if
+    # so, return True, else continue.
+    if cornerCol(cx, cy, cr, p1x, p1y) or cornerCol(cx, cy, cr, p2x, p2y):  return True
 
+    # Get 'length' of line segment.
+    length = hypot(p2x - p1x, p2y - p1y)
+
+    # First, get 'dot_prod' (needed to determine circles projected points on line).  Then designate
+    # 'proj_x' and 'proj_y' as coordinates circle's projected point on line.
+    dot_prod = (((cx - p1x) * (p2x - p1x)) + ((cy - p1y) * (p2y - p1y))) / length ** 2
+    proj_x = p1x + (dot_prod * (p2x - p1x))
+    proj_y = p1y + (dot_prod * (p2y - p1y))
+
+    # The projected point of 'proj_x' and 'proj_y' is the projected point on the ABSOLUTE line.
+    # Next is to determine if the projected point is actually on the given line segment.  This is
+    # done by comparing the length of the line segment to the length of the distance between the
+    # projected point and the two endpoints.  If projected point is on line segment, continue, if
+    # not, return False.
+    proj_to_p1 = hypot(proj_x - p1x, proj_y - p1y)
+    proj_to_p2 = hypot(proj_x - p2x, proj_y - p2y)
+    if not proj_to_p1 + proj_to_p2 == length:  return False
+
+    # Measure distance between projected point and circle's coordinates.  If it is less than the
+    # circle's radius, then return True, else return False.
+    if hypot(proj_x - cx, proj_y - cy) <= cr:  return True
+    else:  return False
+
+
+
+print(circleLineSegCol(circ_x, circ_y, radius, p1_x, p1_y, p2_x, p2_y))
