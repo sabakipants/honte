@@ -6,13 +6,15 @@ from kivy.core.window import Window
 from kivy.uix.widget import Widget
 from kivy.vector import Vector
 from kivy.clock import Clock
-from kivy.properties import NumericProperty, ReferenceListProperty, ObjectProperty
+from kivy.properties import NumericProperty, ReferenceListProperty
 
 from random import randint
+from math import hypot
 
 
 
 #####   CONSTANTS   #####
+# RENDER constants.
 FPS = 60
 # LAUNCH constants.
 L_START_POS = (30, 30)
@@ -58,14 +60,14 @@ class Window(Widget):
     # The applications update-frame function.
     def update(self, dt):
         # Currently, only action to update is the ball moving.
-        self.ball.move()
+        self.ball.move(self.obstacle)
 
         # print(self.obstacle.p4, self.obstacle.p3)
         # print(self.obstacle.p1, self.obstacle.p2)
 
 
-# Child of 'Window'.
-class Obstacle(Widget):
+
+class Obstacle(Widget):   # Child of 'Window'.
     # Globalizing 'Obstacle's variables for use inside 'Window'.  'p1', 'p2', 'p3', and 'p4' are
     # corners of 'Obstacle' to be collision points and used to build collision edges.
     ob_x, ob_y = NumericProperty(0), NumericProperty(0)
@@ -74,6 +76,9 @@ class Obstacle(Widget):
     p2 = ReferenceListProperty(ob_right, ob_y)
     p3 = ReferenceListProperty(ob_right, ob_top)
     p4 = ReferenceListProperty(ob_x, ob_top)
+    # Reference list to pass through App.
+    points = ReferenceListProperty(p1, p2, p3, p4)
+
     # Set positional variables.
     def build(self):
         self.ob_x, self.ob_y = self.x, self.y
@@ -81,15 +86,13 @@ class Obstacle(Widget):
 
 
 
-# Child of 'Window'.
-class Ball(Widget):
+class Ball(Widget):   # Child of 'Window'.
     # Globalizing ball's variables to be updated and maintained within app 'update' function.
     vel_x, vel_y = NumericProperty(0), NumericProperty(0)
     velocity = ReferenceListProperty(vel_x, vel_y)
 
-    def move(self):
-        # ... COLLISION DETECTIONS ... Have to use absolute values ('abs()') of velocities to avoid
-        #                          ... "sticky" collisions.
+    def windowCol(self):
+        # Have to use absolute values ('abs()') of velocities to avoid "sticky" collisions.
 
         # Check for collision with floor.
         if self.y < 0:                       self.vel_y = abs(self.vel_y) * ELASTICITY
@@ -97,7 +100,6 @@ class Ball(Widget):
         elif self.top > self.parent.height:  self.vel_y = - abs(self.vel_y) * ELASTICITY
         # If no collisions, update position without affecting velocity direction and apply gravity.
         else:                                self.vel_y = self.vel_y - (self.vel_y * DRAG) - GRAVITY
-
         # Check for collision with left wall.
         if self.x < 0:                       self.vel_x = abs(self.vel_x) * ELASTICITY
         # Check for collision with right wall.
@@ -108,7 +110,20 @@ class Ball(Widget):
         # Update position by applying new velocity with Vector.
         self.pos = Vector(* self.velocity) + self.pos
 
+####################################################################################################   \/   UNDER CONSTRUCTION   \/   ###
+
+    def pointCol(self, cx, cy, cr, px, py):
+
+        if hypot(cx - px, cy - py) <= cr:  print("collide w/", px, py)
+
+    def move(self, obstacle):
+        self.windowCol()
+        for p in obstacle.points:
+            self.pointCol(self.center[0], self.center[1], self.size[0]/2, p[0], p[1])
+
         # print(self.center, " ... ", self.velocity)
+
+####################################################################################################   /\   UNDER CONSTRUCTION   /\   ###
 
 
 
