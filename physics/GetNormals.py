@@ -10,11 +10,11 @@ poly = [p1, p2, p3, p4, p5, p6]
 def getPtNorm(leg_1, origin, leg_2):
 	"""
 	input:	leg_1 =	The right leg of the origin point on the polygon.
-			origin = The point the function is getting the normal for.
-			leg_2 =	The left leg of the origin point on the polygon.
+		origin = The point the function is getting the normal for.
+		leg_2 =	The left leg of the origin point on the polygon.
 	output:	Return the Vector normal of the 'origin' with respects to 'leg_1' and 'leg_2'.  The
-			normal is the point used to express the reflection orientation of the 'origin'.  It is
-			used to determine the trajectory of an object after collision.
+		normal is the point used to express the reflection orientation of the 'origin'.  It is
+		used to determine the trajectory of an object after collision.
 	"""
 	# Get the angle from the 'origin' point between 'leg_1' and 'leg_2'.
 	legs_dif = Vector(leg_2 - origin).angle(leg_1 - origin)
