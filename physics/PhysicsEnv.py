@@ -181,17 +181,17 @@ class Ball(Widget):  # Child of 'Window'.
 		# Have to use absolute values ('abs()') of velocities to avoid "sticky" collisions.
 
 		# Check for collision with floor.
-		if self.y < 0:							self.vel_y = abs(self.vel_y) * ELASTICITY
+		if self.y < 0:				self.vel_y = abs(self.vel_y) * ELASTICITY
 		# Check for collision with ceiling.
 		elif self.top > self.parent.height:	self.vel_y = - abs(self.vel_y) * ELASTICITY
 		# If no collisions, update position without affecting velocity direction and apply gravity.
-		else:									self.vel_y -= (self.vel_y * DRAG) + GRAVITY
+		else:					self.vel_y -= (self.vel_y * DRAG) + GRAVITY
 		# Check for collision with left wall.
-		if self.x < 0:							self.vel_x = abs(self.vel_x) * ELASTICITY
+		if self.x < 0:				self.vel_x = abs(self.vel_x) * ELASTICITY
 		# Check for collision with right wall.
 		elif self.right > self.parent.width:	self.vel_x = - abs(self.vel_x) * ELASTICITY
 		# If no collision then update position without affecting velocity direction.
-		else:									self.vel_x -= self.vel_x * DRAG
+		else:					self.vel_x -= self.vel_x * DRAG
 
 		# Update position by applying new velocity with Vector.
 		self.pos = Vector(self.velocity) + self.pos
