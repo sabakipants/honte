@@ -1,31 +1,56 @@
 
+
+
+
+
+
+#####   \/   NOTES   \/   ##########################################################################
+
+
+
+"""
+Currently working on:
+Need to convert hardcoded velocity adjustments to functions in PhysicsLib library.
+"""
+
+
+
+#####   \/   IMPORTS   \/   ########################################################################
+
+
+
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
-from kivy.vector import Vector
-from kivy.clock import Clock
 from kivy.properties import NumericProperty, ReferenceListProperty
+from kivy.vector import Vector
 
 from random import randint
 from math import hypot
 
+import PhysicsLib
 
 
 
+#####   \/   CONSTANTS   \/   ######################################################################
 
-#####   CONSTANTS   #####
+
+
 # RENDER constants.
 FPS = 60
 # LAUNCH constants.
 L_START_POS = (30, 30)
-L_VEL_MIN, L_VEL_MAX = 10, 15
-L_ROT_MIN, L_ROT_MAX = 30, 60
+L_VEL_MIN, L_VEL_MAX = 20, 40
+L_ROT_MIN, L_ROT_MAX = 20, 70
 # PHYSICS constants.
 DRAG = 0.01
-GRAVITY = 0.2
+GRAVITY = 0.3
 ELASTICITY = 0.9
 
 
+
+#####   \/   CLASS (PhysicsEnv)   \/   #############################################################
 
 
 
@@ -43,6 +68,8 @@ class PhysicsEnv(App):  # App container.
 
 
 
+#####   \/   CLASS (Window)   \/   #################################################################
+
 
 
 class Window(Widget):  # Only child of 'PhysicsEnv'.
@@ -57,7 +84,7 @@ class Window(Widget):  # Only child of 'PhysicsEnv'.
 		vel = randint(L_VEL_MIN, L_VEL_MAX)
 		# vel = 20
 		rot = randint(L_ROT_MIN, L_ROT_MAX)
-		# rot = 55
+		# rot = 50
 		self.ball.velocity = Vector(vel, 0).rotate(rot)
 
 	# The applications update-frame function.
@@ -67,104 +94,55 @@ class Window(Widget):  # Only child of 'PhysicsEnv'.
 
 
 
+#####   \/   CLASS (Obstacle)   \/   ###############################################################
+
 
 
 class Obstacle(Widget):  # Child of 'Window'.
-	# Globalizing 'Obstacle's variables for use inside 'Window'.  'p1', 'p2', 'p3', and 'p4' are
-	# corners of 'Obstacle' to be collision points and used to build collision edges.
+	# Create variables for building 'points' list.
 	ob_x, ob_y = NumericProperty(0), NumericProperty(0)
 	ob_right, ob_top = NumericProperty(0), NumericProperty(0)
 	p1 = ReferenceListProperty(ob_x, ob_y)
 	p2 = ReferenceListProperty(ob_x, ob_top)
 	p3 = ReferenceListProperty(ob_right, ob_top)
 	p4 = ReferenceListProperty(ob_right, ob_y)
-	# Reference list to pass through App.
 	points = ReferenceListProperty(p1, p2, p3, p4)
-
-	# Variables for normals.																		### Have not established glitch
-	n1x, n1y = NumericProperty(0), NumericProperty(0)												#	avoidance with normals yet.
-	n2x, n2y = NumericProperty(0), NumericProperty(0)												#	So, currently not using these,
-	n3x, n3y = NumericProperty(0), NumericProperty(0)												#	but will in the future.
+	# Create variables for building 'normals' list.
+	n1x, n1y = NumericProperty(0), NumericProperty(0)
+	n2x, n2y = NumericProperty(0), NumericProperty(0)
+	n3x, n3y = NumericProperty(0), NumericProperty(0)
 	n4x, n4y = NumericProperty(0), NumericProperty(0)
 	n1 = ReferenceListProperty(n1x, n1y)
 	n2 = ReferenceListProperty(n2x, n2y)
 	n3 = ReferenceListProperty(n3x, n3y)
 	n4 = ReferenceListProperty(n4x, n4y)
 	normals = ReferenceListProperty(n1, n2, n3, n4)
+	# Create variables for 'edges' list.
+	e1 = ReferenceListProperty(p1, p2)
+	e2 = ReferenceListProperty(p2, p3)
+	e3 = ReferenceListProperty(p3, p4)
+	e4 = ReferenceListProperty(p4, p1)
+	edges = ReferenceListProperty(e1, e2, e3, e4)
+	# Create variables for 'legs' list.
+	l1 = ReferenceListProperty(e4, e1)
+	l2 = ReferenceListProperty(e1, e2)
+	l3 = ReferenceListProperty(e2, e3)
+	l4 = ReferenceListProperty(e3, e4)
+	legs = ReferenceListProperty(l1, l2, l3, l4)
 
-	# Set positional variables.
 	def build(self):
+		# Build 'points' list.
 		self.ob_x, self.ob_y = self.x, self.y
 		self.ob_right, self.ob_top = self.right, self.top
+		# Build 'normals' list.
+		self.n1x, self.n1y = PhysicsLib.getPtNorm(self.p4, self.p1, self.p2)
+		self.n2x, self.n2y = PhysicsLib.getPtNorm(self.p1, self.p2, self.p3)
+		self.n3x, self.n3y = PhysicsLib.getPtNorm(self.p2, self.p3, self.p4)
+		self.n4x, self.n4y = PhysicsLib.getPtNorm(self.p3, self.p4, self.p1)
 
 
 
-		"""																							### Again, not using these normals
-		def getPtNorm(leg_1, origin, leg_2):														#	functions but will in the future.
-			""""""
-			input:	leg_1 =	 The right leg of the origin point on the polygon.
-					origin = The point the function is getting the normal for.
-					leg_2 =	 The left leg of the origin point on the polygon.
-			output:	Return the Vector normal of the 'origin' with respects to 'leg_1' and 'leg_2'.
-					The normal is the point used to express the reflection orientation of the
-					'origin'.  It is used to determine the trajectory of an object after collision.
-			""""""
-			leg_1 = Vector(leg_1)
-			origin = Vector(origin)
-			leg_2 = Vector(leg_2)
-
-			acute = False  # Working variable for when 'origin' is an internal corner.
-
-			# Get the angle from the 'origin' point between 'leg_1' and 'leg_2'.
-			legs_dif = Vector(leg_2 - origin).angle(leg_1 - origin)
-			if legs_dif < 0:  acute = True  # Detect internal corner and label as 'acute'.
-
-			# Get the global angle of 'leg_1' from 'origin'.
-			leg_angle = Vector(1, 0).angle(leg_1 - origin)
-
-			# With 'legs_dif' and 'leg_angle' get the global angle of the 'origin' normal.
-			norm_angle = - (leg_angle - (legs_dif / 2)) + 180
-			if acute:  norm_angle += 180  # Adjust norm_angle for internal corner.
-			# Return an extension of 1 unit from 'origin' by calculated angle 'norm_angle'.
-			return Vector(1, 0).rotate(norm_angle) + origin
-		def getNormals(poly_pts):
-			""""""
-			input:	poly_pts = List of Vectors as coordinates representing a polygon.
-			output:	Return list of Vectors that are normals for coordinates in input list of
-					Vectors.
-			""""""
-			normals = []  # Initiate return variable.
-			# Get new list of points, extending beginning of list with 'last' item and extending end
-			# of list with 'first' item.
-			points = poly_pts[:]
-			first, last = points[0], points[len(points) - 1]
-			points.insert(0, last), points.append(first)
-
-			# Convert point type to 'Vector'.
-			for index, point in enumerate(points):  points[index] = Vector(point)
-
-			# With extended 'points', loop through and calculate normals with 'getPtNorm()'.
-			for index, point in enumerate(points):
-				# Do not get normal for first or last item in extended 'points' list.
-				if index == 0 or index == len(points) - 1:  continue
-
-				# Get normal with 'getPtNorm()' from list of 'points'.  Because 'points' is a list
-				# of coordinates representing a polygon in clockwise positional order, to get the
-				# previous and next point of polygon just 'index - 1' and 'index + 1'.
-				normal = getPtNorm(points[index - 1], point, points[index + 1])
-				normals.append(normal)
-			return normals
-
-		self.n1x, self.n1y = getPtNorm(self.p4, self.p1, self.p2)
-		self.n2x, self.n2y = getPtNorm(self.p1, self.p2, self.p3)
-		self.n3x, self.n3y = getPtNorm(self.p2, self.p3, self.p4)
-		self.n4x, self.n4y = getPtNorm(self.p3, self.p4, self.p1)
-
-		# normals = getNormals(self.points)
-		# print(normals)
-		"""
-
-
+#####   \/   CLASS (Ball)   \/   ###################################################################
 
 
 
@@ -194,74 +172,86 @@ class Ball(Widget):  # Child of 'Window'.
 
 
 
+
+
+
+
+
+
+
 #####   \/   UNDER CONSTRUCTION   \/   #############################################################
+
 	"""
-	These are working functions for collision with corners of 'obstacle'.  Still need to integrate
-	functions for collision with sides of 'obstacle'.  Also, need to integrate normals to avoid
-	glitch phasing and sticking.
+	Still need to convert hardcoded modifications to self.velocity as a result of detected
+	collisions, to functions in PhysicsLib library.
 	"""
-
-	def pointCol(self, cx, cy, cr, px, py):
-		return hypot(cx - px, cy - py) <= cr
-
-
-	def edgeCol(self, cx, cy, cr, p1x, p1y, p2x, p2y):
-		length = hypot(p2x - p1x, p2y - p1y)
-		dot_prod = (((cx - p1x) * (p2x - p1x)) + ((cy - p1y) * (p2y - p1y))) / length ** 2
-		proj_x = p1x + (dot_prod * (p2x - p1x))
-		proj_y = p1y + (dot_prod * (p2y - p1y))
-		proj_to_p1 = hypot(proj_x - p1x, proj_y - p1y)
-		proj_to_p2 = hypot(proj_x - p2x, proj_y - p2y)
-		if not proj_to_p1 + proj_to_p2 == length:  return False
-		if hypot(proj_x - cx, proj_y - cy) <= cr:  return True
-		else:  return False
-
-
 
 	def move(self, obstacle):
+
 		self.windowCol()
+
 		# Perform 'pointCol()' on each point from 'obstacle'.
-		for p in obstacle.points:
-			if self.pointCol(self.center[0], self.center[1], self.size[0] / 2, p[0], p[1]):
+		for i, p in enumerate(obstacle.points):
+			cx, cy, cr = self.center[0], self.center[1], self.size[0] / 2
+			if PhysicsLib.pointCol(cx, cy, cr, p[0], p[1]):
 				# If collision is detected...
 
-				# Get angle from origin 'ball.center' and points 'ball.velocity' and point
-				# collided with.
-				dif = (Vector(p) - Vector(self.center)).angle(Vector(self.velocity))
-				# Get angle of reflection point.  It is the angle to be added to current velocity
-				# angle to get new trajectory.
-				refl = (90 - abs(dif)) * 2
+				for l in obstacle.legs[i]:
+					lp1, lp2 = l
+					lp1x, lp1y = lp1
+					lp2x, lp2y = lp2
+					if PhysicsLib.edgeProj(cx, cy, lp1x, lp1y, lp2x, lp2y):
+						""" perform 'edgeCol()' on 'l' """
+						vel_ang = (Vector(1, 0).angle(Vector(self.velocity)))                       # NEED TO WRITE PHYSICS FUNCTION FOR BLOCK...
+						# if vel_ang < 0:  vel_ang = abs(vel_ang) + 180                             #
+						print("vel_ang", vel_ang)                                                   #
+						edge_ang = (Vector(1, 0).angle(Vector(lp2) - Vector(lp1)))                  #
+						print("edge_ang", edge_ang)                                                 #
+						# dif = (Vector(p2) - Vector(p)).angle(Vector(self.velocity))               #
+						dif = (edge_ang - vel_ang)                                                  #
+						print("dif", dif)                                                           #
+						# dif = edge_ang - vel_ang                                                  #
+						refl = dif * 2                                                              #
+						if dif < 0:  self.velocity = Vector(self.velocity).rotate(-refl)            #
+						else:  self.velocity = Vector(self.velocity).rotate(refl)                   # ...
 
-				# Handle two possible scenarios differently:  If angle from collision point to
-				# velocity is negative, then reflection is positive.  If angle from collision point
-				# to velocity is positive, then reflection is negative.
-				if dif < 0:  self.velocity = Vector(self.velocity).rotate(refl)
-				else:  self.velocity = Vector(self.velocity).rotate(-refl)
+						return
 
-				break
+				# Get angle from origin 'ball.center' and points 'ball.velocity' and point          # NEED TO WRITE PHYSICS FUNCTION FOR BLOCK...
+				# collided with.                                                                    #
+				dif = (Vector(p) - Vector(self.center)).angle(Vector(self.velocity))                #
+				# Get angle of reflection point.  It is the angle to be added to current velocity   #
+				# angle to get new trajectory.                                                      #
+				refl = (90 - abs(dif)) * 2                                                          #
+				# Handle two possible scenarios differently:  If angle from collision point to      #
+				# velocity is negative, then reflection is positive.  If angle from collision point #
+				# to velocity is positive, then reflection is negative.                             #
+				if dif < 0:  self.velocity = Vector(self.velocity).rotate(refl)                     #
+				else:  self.velocity = Vector(self.velocity).rotate(-refl)                          # ...
 
-			if obstacle.points.index(p) != len(obstacle.points) - 1:  p2 = obstacle.points[obstacle.points.index(p) + 1]
-			else:  p2 = obstacle.points[0]
+				return  # New velocity determined.  Proceed to next frame.
 
-			if self.edgeCol(self.center[0], self.center[1], self.size[0] / 2, p[0], p[1], p2[0], p2[1]):
-				vel_ang = (Vector(1, 0).angle(Vector(self.velocity)))
-				# if vel_ang < 0:  vel_ang = abs(vel_ang) + 180
-				print("vel_ang", vel_ang)
-				edge_ang = (Vector(1, 0).angle(Vector(p2) - Vector(p)))
-				print("edge_ang", edge_ang)
-				# dif = (Vector(p2) - Vector(p)).angle(Vector(self.velocity))
-				dif = (edge_ang - vel_ang)
-				print("dif", dif)
+		for i, e in enumerate(obstacle.edges):
+			cx, cy, cr = self.center[0], self.center[1], self.size[0] / 2
+			p1, p2 = e
+			p1x, p1y = p1
+			p2x, p2y = p2
 
-				# dif = edge_ang - vel_ang
-				refl = dif * 2
-				if dif < 0:  self.velocity = Vector(self.velocity).rotate(-refl)
-				else:  self.velocity = Vector(self.velocity).rotate(refl)
+			if PhysicsLib.edgeCol(cx, cy, cr, p1x, p1y, p2x, p2y):
+				vel_ang = (Vector(1, 0).angle(Vector(self.velocity)))                               # NEED TO WRITE PHYSICS FUNCTION FOR BLOCK...
+				# if vel_ang < 0:  vel_ang = abs(vel_ang) + 180                                     #
+				print("vel_ang", vel_ang)                                                           #
+				edge_ang = (Vector(1, 0).angle(Vector(p2) - Vector(p1)))                            #
+				print("edge_ang", edge_ang)                                                         #
+				# dif = (Vector(p2) - Vector(p)).angle(Vector(self.velocity))                       #
+				dif = (edge_ang - vel_ang)                                                          #
+				print("dif", dif)                                                                   #
+				# dif = edge_ang - vel_ang                                                          #
+				refl = dif * 2                                                                      #
+				if dif < 0:  self.velocity = Vector(self.velocity).rotate(-refl)                    #
+				else:  self.velocity = Vector(self.velocity).rotate(refl)                           # ...
 
-				break
-
-				# App.get_running_app().stop()
-
+				return
 
 #####   /\   UNDER CONSTRUCTION   /\   #############################################################
 
@@ -269,6 +259,14 @@ class Ball(Widget):  # Child of 'Window'.
 
 
 
-# Call app.
-if __name__ == '__main__':
-	PhysicsEnv().run()
+
+
+
+
+
+#####   \/   CALL APP   \/   #######################################################################
+
+
+
+if __name__ == '__main__':  PhysicsEnv().run()
+
