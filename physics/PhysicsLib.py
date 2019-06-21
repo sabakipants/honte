@@ -36,6 +36,7 @@ def getPtNorm(leg_1, origin, leg_2):
     # With 'legs_dif' and 'leg_angle' get the global angle of the 'origin' normal.
     norm_angle = - (leg_angle - (legs_dif / 2)) + 180
     if acute:  norm_angle += 180  # Adjust norm_angle for internal corner.
+
     # Return an extension of 1 unit from 'origin' by calculated angle 'norm_angle'.
     return Vector(1, 0).rotate(norm_angle) + origin
 
@@ -85,8 +86,8 @@ def edgeProj(cx, cy, p1x, p1y, p2x, p2y, edge_col=False):
     """
     Return bool of whether circle's center (represented with arguments 'cx' and 'cy') is within a
     perpendicular projection of line segment (represented with arguments 'p1x', 'p1y', 'p2x', and
-    'p2y'.  'edge_col' is default argument so function will return 'package' of values if called
-    by 'edgeCol()'.)
+    'p2y'.)  'edge_col' is default argument so function will return 'package' of values if called
+    by 'edgeCol()'.
     """
     # Get 'length' of line segment.  Then, get 'dot_prod' (needed to determine circles projected
     # points on line).  Then designate 'proj_x' and 'proj_y' as coordinates circle's projected point
