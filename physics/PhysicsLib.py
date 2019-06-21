@@ -36,6 +36,7 @@ def getPtNorm(leg_1, origin, leg_2):
 	# With 'legs_dif' and 'leg_angle' get the global angle of the 'origin' normal.
 	norm_angle = - (leg_angle - (legs_dif / 2)) + 180
 	if acute:  norm_angle += 180  # Adjust norm_angle for internal corner.
+		
 	# Return an extension of 1 unit from 'origin' by calculated angle 'norm_angle'.
 	return Vector(1, 0).rotate(norm_angle) + origin
 
@@ -67,6 +68,7 @@ def getNormals(poly_pts):
 		# previous and next point of polygon just 'index - 1' and 'index + 1'.
 		normal = getPtNorm(points[index - 1], point, points[index + 1])
 		normals.append(normal)
+		
 	return normals
 
 
