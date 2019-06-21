@@ -14,7 +14,7 @@ from kivy.vector import Vector
 def getPtNorm(leg_1, origin, leg_2):
 	"""
 	input:	leg_1 =	 The right leg of the origin point on the polygon.
-	    origin = The point the function is getting the normal for.
+			origin = The point the function is getting the normal for.
 			leg_2 =	 The left leg of the origin point on the polygon.
 	output:	Return the Vector normal of the 'origin' with respects to 'leg_1' and 'leg_2'.
 			The normal is the point used to express the reflection orientation of the
