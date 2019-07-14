@@ -28,18 +28,21 @@ def getPtNorm(leg_1, origin, leg_2):
     origin = Vector(origin)
     leg_2 = Vector(leg_2)
 
-    acute = False  # Working variable for when 'origin' is an internal corner.
+    # Working variable for when 'origin' is an internal corner.
+    acute = False
 
     # Get the angle from the 'origin' point between 'leg_1' and 'leg_2'.
     legs_dif = Vector(leg_2 - origin).angle(leg_1 - origin)
-    if legs_dif < 0:  acute = True  # Detect internal corner and label as 'acute'.
+    # Detect internal corner and label as 'acute'.
+    if legs_dif < 0:  acute = True
 
     # Get the global angle of 'leg_1' from 'origin'.
     leg_angle = Vector(1, 0).angle(leg_1 - origin)
 
     # With 'legs_dif' and 'leg_angle' get the global angle of the 'origin' normal.
     norm_angle = - (leg_angle - (legs_dif / 2)) + 180
-    if acute:  norm_angle += 180  # Adjust norm_angle for internal corner.
+    # Adjust norm_angle for internal corner.
+    if acute:  norm_angle += 180
 
     # Return an extension of 1 unit from 'origin' by calculated angle 'norm_angle'.
     return Vector(1, 0).rotate(norm_angle) + origin
